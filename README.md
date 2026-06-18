@@ -5,7 +5,7 @@ A Python-based tool for rendering ISF (Interactive Shader Format) shaders to ima
 ## Installation
 
 ### Prerequisites
-- Python 3.8 or later
+- Python 3.9 or later
 - OpenGL drivers and platform support
 
 ### Install from PyPI
@@ -15,7 +15,7 @@ pip install isf-shader-renderer
 
 ### Install from source
 ```bash
-git clone https://github.com/jecortez/ai-shader-tool.git
+git clone https://github.com/jimcortez/ai-shader-tool.git
 cd ai-shader-tool
 pip install -e .
 ```
@@ -27,7 +27,7 @@ pip install -e .
 Render a single shader to an image:
 
 ```bash
-isf-shader-render path/to/shader.fs --output output.png
+isf-renderer path/to/shader.fs --output output.png
 ```
 
 ### CLI Options
@@ -41,7 +41,6 @@ isf-shader-render path/to/shader.fs --output output.png
 | `--height` | `-h` | Output image height (default: 1080) |
 | `--quality` | `-q` | PNG quality 1-100 (default: 95) |
 | `--verbose` | `-v` | Enable verbose output |
-| `--profile` | | Enable profiling (timing and memory usage) |
 | `--info` | | Show renderer and shader information |
 | `--ai-info` | | Format output for AI processing (natural language, no colors) |
 | `--inputs` | | Shader input values as key=value pairs |
@@ -52,10 +51,10 @@ Use the `--ai-info` flag for AI systems and automated processing:
 
 ```bash
 # Normal output (with colors and status updates)
-isf-shader-render shader.fs --output result.png
+isf-renderer shader.fs --output result.png
 
 # AI-friendly output (natural language only)
-isf-shader-render shader.fs --output result.png --ai-info
+isf-renderer shader.fs --output result.png --ai-info
 ```
 
 **AI-friendly output features:**
@@ -71,10 +70,10 @@ Render multiple shaders with different settings:
 
 ```bash
 # Using configuration file
-isf-shader-render --config config.yaml
+isf-renderer --config config.yaml
 
 # Using multiple time codes
-isf-shader-render shader.fs --output frame_%04d.png --time 0 --time 1 --time 2
+isf-renderer shader.fs --output frame_%04d.png --time 0 --time 1 --time 2
 ```
 
 ### Shader Inputs
@@ -83,10 +82,10 @@ Set shader input values:
 
 ```bash
 # Set color input
-isf-shader-render shader.fs --output result.png --inputs "color=1.0 0.0 0.0 1.0"
+isf-renderer shader.fs --output result.png --inputs "color=1.0 0.0 0.0 1.0"
 
 # Set multiple inputs
-isf-shader-render shader.fs --output result.png --inputs "intensity=0.8,position=0.5 0.3,enabled=true"
+isf-renderer shader.fs --output result.png --inputs "intensity=0.8,position=0.5 0.3,enabled=true"
 ```
 
 ### Error Handling Examples
@@ -95,15 +94,15 @@ The renderer provides helpful error messages:
 
 ```bash
 # Missing main function
-isf-shader-render invalid.fs --output result.png --ai-info
+isf-renderer invalid.fs --output result.png --ai-info
 # Output: The shader is missing a main function. ISF shaders require a 'void main()' function to define the fragment shader entry point.
 
 # Syntax error
-isf-shader-render syntax_error.fs --output result.png --ai-info
+isf-renderer syntax_error.fs --output result.png --ai-info
 # Output: The shader contains syntax errors: Unexpected token '}'. Please check the GLSL syntax and ensure all brackets, semicolons, and function calls are properly formatted.
 
 # File not found
-isf-shader-render missing.fs --output result.png --ai-info
+isf-renderer missing.fs --output result.png --ai-info
 # Output: File not found: missing.fs. Please check that the file path is correct and the file exists.
 ```
 
@@ -117,7 +116,6 @@ defaults:
   width: 1920
   height: 1080
   quality: 95
-  max_texture_size: 4096
 
 shaders:
   - input: "shaders/red.fs"
@@ -174,9 +172,9 @@ The ISF Shader Renderer includes a Model Context Protocol (MCP) server for progr
 
 ### Quick Start (MCP Server)
 
-Install with MCP dependencies:
+The MCP server ships with the package — no extra install step:
 ```bash
-pip install isf-shader-renderer[mcp]
+pip install isf-shader-renderer
 ```
 
 Start the MCP server (stdio mode, recommended for AI tools):

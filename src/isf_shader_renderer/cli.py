@@ -22,13 +22,14 @@ console = Console()
 
 
 # Only register the main function as the Typer command/callback
-@app.command('isf-render')
+@app.command("isf-render")
 def isf_render(
     config_file: Optional[Path] = typer.Option(
         None, "--config", "-c", help="Path to YAML configuration file"
     ),
-    shader: Path = typer.Argument(
-        ..., help="Path to ISF shader file (use '-' for stdin)"
+    shader: Optional[Path] = typer.Argument(
+        None,
+        help="Path to ISF shader file (use '-' for stdin). Optional when --config provides shaders.",
     ),
     time: List[float] = typer.Option(
         [],
@@ -63,7 +64,9 @@ def isf_render(
 
     # Validate that --info and --ai-info are not used together
     if info and ai_info:
-        console.print("[red]Error: --info and --ai-info flags cannot be used together[/red]")
+        console.print(
+            "[red]Error: --info and --ai-info flags cannot be used together[/red]"
+        )
         raise typer.Exit(1)
 
     if verbose and not ai_info:
@@ -96,16 +99,29 @@ def isf_render(
         if verbose and not ai_info:
             console.print("Using default configuration")
 
-    # Override configuration with command-line arguments
-    if width != 1920 or height != 1080 or quality != 95:
+    # Override configuration with command-line arguments. Each field is applied
+    # independently so that, e.g., passing only --width does not reset height and
+    # quality back to their CLI defaults over values loaded from a config file.
+    overridden = False
+    if width != 1920:
         cfg.defaults.width = width
+        overridden = True
+    if height != 1080:
         cfg.defaults.height = height
+        overridden = True
+    if quality != 95:
         cfg.defaults.quality = quality
-        if verbose and not ai_info:
-            console.print("Applied command-line overrides")
+        overridden = True
+    if overridden and verbose and not ai_info:
+        console.print("Applied command-line overrides")
+
+    # When --config supplies its own list of shaders, the positional shader
+    # argument is not required (and is ignored).
+    use_config_shaders = bool(config_file and cfg.shaders)
 
     # Handle shader input
-    if str(shader) == "-":
+    shader_content: Optional[str] = None
+    if shader is not None and str(shader) == "-":
         # Read from stdin
         if not sys.stdin.isatty():
             shader_content = sys.stdin.read()
@@ -115,11 +131,9 @@ def isf_render(
             if ai_info:
                 print("Error: No input from stdin")
             else:
-                console.print(
-                    "[red]Error: No input from stdin[/red]"
-                )
+                console.print("[red]Error: No input from stdin[/red]")
             raise typer.Exit(1)
-    else:
+    elif shader is not None:
         if not shader.exists():
             if ai_info:
                 print(f"Error: Shader file '{shader}' not found")
@@ -129,16 +143,15 @@ def isf_render(
         shader_content = shader.read_text()
         if verbose and not ai_info:
             console.print(f"Loaded shader from: {shader}")
-
-    # Create renderer (will crash if VVISF is not available)
-    try:
-        renderer = ShaderRenderer(cfg)
-    except ImportError as e:
-        if ai_info:
-            print(format_error_for_ai(e, "renderer initialization"))
-        else:
-            console.print(f"[red]Error: {e}[/red]")
+    elif not use_config_shaders:
+        message = (
+            "Error: a shader argument is required unless --config provides shaders"
+        )
+        print(message) if ai_info else console.print(f"[red]{message}[/red]")
         raise typer.Exit(1)
+
+    # Create renderer (pyvvisf is a hard dependency, installed with the package).
+    renderer = ShaderRenderer(cfg)
 
     # Show info if requested
     if info and not ai_info:
@@ -147,20 +160,31 @@ def isf_render(
         table.add_column("Property", style="cyan")
         table.add_column("Value", style="magenta")
         table.add_row("Version", __import__("isf_shader_renderer").__version__)
-        table.add_row("Author", getattr(__import__("isf_shader_renderer"), "__author__", ""))
+        table.add_row(
+            "Author", getattr(__import__("isf_shader_renderer"), "__author__", "")
+        )
         table.add_row(
             "Description", "Render ISF shaders to PNG images at specified time codes"
         )
         console.print(table)
-        # Shader info
-        shader_info = renderer.get_shader_info(shader_content)
-        shader_table = Table(title="Shader Information")
-        for k, v in shader_info.items():
-            if k == "inputs":
-                shader_table.add_row("inputs", str([i["name"] for i in v]))
-            else:
-                shader_table.add_row(str(k), str(v))
-        console.print(shader_table)
+        # Shader info (only when a shader was supplied on the command line)
+        if shader_content is not None:
+            shader_info = renderer.get_shader_info(shader_content)
+            shader_table = Table(title="Shader Information")
+            for k, v in shader_info.items():
+                if k == "inputs":
+                    input_names = [
+                        (
+                            i.get("NAME", i.get("name", "?"))
+                            if isinstance(i, dict)
+                            else str(i)
+                        )
+                        for i in v
+                    ]
+                    shader_table.add_row("inputs", str(input_names))
+                else:
+                    shader_table.add_row(str(k), str(v))
+            console.print(shader_table)
 
     # Parse inputs string into a dictionary
     input_dict = {}
@@ -193,13 +217,16 @@ def isf_render(
                     "[red]Error: Output path required when not using config file[/red]"
                 )
             raise typer.Exit(1)
+        # shader_content is guaranteed set here: we error out earlier if no
+        # shader was provided and the config did not supply shaders.
+        assert shader_content is not None
         # If inputs are provided, create a ShaderConfig and pass to renderer
         shader_config = None
         if input_dict:
             from .config import ShaderConfig
 
             shader_config = ShaderConfig(
-                input=str(shader) if str(shader) != "-" else "<stdin>",
+                input=str(shader) if shader and str(shader) != "-" else "<stdin>",
                 output=str(output),
                 times=time or [0.0],
                 width=width,
@@ -319,12 +346,18 @@ def render_from_config(
 
                 except Exception as e:
                     failed_frames += 1
-                    print(format_error_for_ai(e, f"rendering frame {i+1} at time {time_code}s"))
+                    print(
+                        format_error_for_ai(
+                            e, f"rendering frame {i+1} at time {time_code}s"
+                        )
+                    )
 
         if failed_frames == 0:
             print(format_success_for_ai(successful_frames))
         else:
-            print(f"Completed rendering with {successful_frames} successful frames and {failed_frames} failed frames from {total_shaders} shaders")
+            print(
+                f"Completed rendering with {successful_frames} successful frames and {failed_frames} failed frames from {total_shaders} shaders"
+            )
 
 
 def render_single_shader(
@@ -382,9 +415,13 @@ def render_single_shader(
                     )
 
         if failed_frames == 0:
-            console.print(f"\n[green]Successfully rendered {successful_frames} frames[/green]")
+            console.print(
+                f"\n[green]Successfully rendered {successful_frames} frames[/green]"
+            )
         else:
-            console.print(f"\n[yellow]Completed rendering with {successful_frames} successful frame(s) and {failed_frames} failed frame(s)[/yellow]")
+            console.print(
+                f"\n[yellow]Completed rendering with {successful_frames} successful frame(s) and {failed_frames} failed frame(s)[/yellow]"
+            )
     else:
         # AI-friendly output mode
         successful_frames = 0
@@ -408,24 +445,19 @@ def render_single_shader(
 
             except Exception as e:
                 failed_frames += 1
-                print(format_error_for_ai(e, f"rendering frame {i+1} at time {time_code}s"))
+                print(
+                    format_error_for_ai(
+                        e, f"rendering frame {i+1} at time {time_code}s"
+                    )
+                )
 
+        # AI-friendly mode: plain text, no Rich markup.
         if failed_frames == 0:
-            console.print(f"\n[green]Successfully rendered {successful_frames} frames[/green]")
+            print(format_success_for_ai(successful_frames))
         else:
-            console.print(f"\n[yellow]Completed rendering with {successful_frames} successful frame(s) and {failed_frames} failed frame(s)[/yellow]")
-
-
-# Move info and mcp_server to standalone functions (not Typer commands)
-# def info_command(): # Removed info command
-#     """Show information about the ISF Shader Renderer."""
-#     table = Table(title="ISF Shader Renderer Information")
-#     table.add_column("Property", style="cyan")
-#     table.add_column("Value", style="magenta")
-#     table.add_row("Version", __import__('isf_shader_renderer').__version__)
-#     table.add_row("Author", __import__('isf_shader_renderer').__author__)
-#     table.add_row("Description", "Render ISF shaders to PNG images at specified time codes")
-#     console.print(table)
+            print(
+                f"Completed rendering with {successful_frames} successful frame(s) and {failed_frames} failed frame(s)"
+            )
 
 
 def cli():

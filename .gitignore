@@ -189,3 +189,6 @@ output/
 # Temporary files
 *.tmp
 *.temp
+
+# graphify knowledge-graph output
+graphify-out/

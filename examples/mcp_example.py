@@ -16,7 +16,7 @@ EXAMPLE_SHADER = """/*{
 
 void main() {
     vec2 uv = gl_FragCoord.xy / RENDERSIZE.xy;
-    
+
     // Create a simple animated gradient
     float time = TIME;
     vec3 color = vec3(
@@ -24,7 +24,7 @@ void main() {
         cos(uv.y * 8.0 + time * 1.5) * 0.5 + 0.5,
         sin((uv.x + uv.y) * 5.0 + time * 3.0) * 0.5 + 0.5
     );
-    
+
     gl_FragColor = vec4(color, 1.0);
 }"""
 
@@ -32,32 +32,32 @@ void main() {
 async def test_mcp_server():
     """Test the MCP server functionality."""
     from isf_shader_renderer.mcp.handlers import ISFShaderHandlers
-    
+
     print("Testing ISF Shader Renderer MCP Server")
     print("=" * 50)
-    
+
     # Create handlers
     handlers = ISFShaderHandlers()
-    
+
     # Test 1: Validate shader
     print("\n1. Testing shader validation...")
     result = await handlers.call_tool("validate_shader", {
         "shader_content": EXAMPLE_SHADER
     })
-    
+
     print(f"Success: {result['success']}")
     print(f"Message: {result['message']}")
     if result.get('errors'):
         print(f"Errors: {result['errors']}")
     if result.get('warnings'):
         print(f"Warnings: {result['warnings']}")
-    
+
     # Test 2: Get shader info
     print("\n2. Testing shader info extraction...")
     result = await handlers.call_tool("get_shader_info", {
         "shader_content": EXAMPLE_SHADER
     })
-    
+
     print(f"Success: {result['success']}")
     print(f"Message: {result['message']}")
     if result.get('shader_info'):
@@ -70,7 +70,7 @@ async def test_mcp_server():
         print(f"  Has RENDERSIZE uniform: {info.get('has_resolution_uniform')}")
         if 'description' in info:
             print(f"  Description: {info['description']}")
-    
+
     # Test 3: Render shader
     print("\n3. Testing shader rendering...")
     result = await handlers.call_tool("render_shader", {
@@ -81,7 +81,7 @@ async def test_mcp_server():
         "quality": 95,
         "verbose": True
     })
-    
+
     print(f"Success: {result['success']}")
     print(f"Message: {result['message']}")
     print(f"Rendered frames: {len(result['rendered_frames'])}")
@@ -103,21 +103,21 @@ async def test_mcp_server():
         output_path.parent.mkdir(exist_ok=True)
         image.save(output_path)
         print(f"Saved example frame to: {output_path}")
-    
+
     # Test 4: List resources
     print("\n4. Testing resource listing...")
     resources = await handlers.list_resources()
     print(f"Available resources: {len(resources)}")
     for resource in resources:
         print(f"  - {resource.name}: {resource.description}")
-    
+
     # Test 5: Read resource
     print("\n5. Testing resource reading...")
     if resources:
         content = await handlers.read_resource(resources[0].uri)
         print(f"Resource content length: {len(content)} bytes")
         print(f"First 100 characters: {content[:100].decode()}")
-    
+
     print("\nMCP server test completed!")
 
 
@@ -126,15 +126,15 @@ def main():
     print("ISF Shader Renderer MCP Server Example")
     print("This example demonstrates the MCP server functionality.")
     print()
-    
+
     try:
         asyncio.run(test_mcp_server())
     except Exception as e:
         print(f"Error: {e}")
         return 1
-    
+
     return 0
 
 
 if __name__ == "__main__":
-    exit(main()) 
+    exit(main())

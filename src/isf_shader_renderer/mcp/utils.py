@@ -2,58 +2,53 @@
 
 import base64
 import json
-import logging
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from rich.logging import RichHandler
+# Re-exported for backward compatibility; the canonical definitions live in
+# isf_shader_renderer.errors.
+from ..errors import ISFShaderError, RenderingError, ShaderValidationError
 
-
-def setup_logging(level: str = "INFO", enable_rich: bool = True) -> None:
-    """Setup logging for MCP server."""
-    log_level = getattr(logging, level.upper(), logging.INFO)
-    
-    if enable_rich:
-        logging.basicConfig(
-            level=log_level,
-            format="%(message)s",
-            datefmt="[%X]",
-            handlers=[RichHandler(rich_tracebacks=True)]
-        )
-    else:
-        logging.basicConfig(
-            level=log_level,
-            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+__all__ = [
+    "validate_shader_content",
+    "extract_shader_metadata",
+    "sanitize_filename",
+    "create_temp_file",
+    "encode_image_to_base64",
+    "decode_base64_to_image",
+    "ISFShaderError",
+    "ShaderValidationError",
+    "RenderingError",
+]
 
 
 def validate_shader_content(shader_content: str) -> List[str]:
     """Validate shader content and return list of errors."""
     errors = []
-    
+
     if not shader_content:
         errors.append("Shader content is empty")
         return errors
-    
+
     if not shader_content.strip():
         errors.append("Shader content contains only whitespace")
         return errors
-    
+
     # Basic ISF structure validation
     content = shader_content.strip()
-    
+
     # Check for ISF header
     if not content.startswith("/*{") and not content.startswith("/*"):
         errors.append("Shader does not appear to have ISF header")
-    
+
     # Check for main function
     if "void main()" not in content and "void main (" not in content:
         errors.append("Shader does not contain main function")
-    
+
     # Check for gl_FragColor assignment
     if "gl_FragColor" not in content:
         errors.append("Shader does not assign to gl_FragColor")
-    
+
     return errors
 
 
@@ -68,17 +63,17 @@ def extract_shader_metadata(shader_content: str) -> Dict[str, Any]:
         "has_mouse_uniform": "MOUSE" in shader_content.upper(),
         "has_date_uniform": "DATE" in shader_content.upper(),
     }
-    
+
     # Try to extract ISF JSON header
     try:
         if shader_content.startswith("/*{"):
             # Find the end of the JSON header
             end_idx = shader_content.find("}*/")
             if end_idx != -1:
-                json_str = shader_content[2:end_idx + 1]
+                json_str = shader_content[2 : end_idx + 1]
                 isf_data = json.loads(json_str)
                 metadata["isf_header"] = isf_data
-                
+
                 # Extract common fields
                 if "DESCRIPTION" in isf_data:
                     metadata["description"] = isf_data["DESCRIPTION"]
@@ -93,27 +88,29 @@ def extract_shader_metadata(shader_content: str) -> Dict[str, Any]:
     except (json.JSONDecodeError, KeyError):
         # If JSON parsing fails, continue without ISF header
         pass
-    
+
     return metadata
 
 
 def sanitize_filename(filename: str) -> str:
     """Sanitize filename for safe file operations."""
     import re
+
     # Replace each unsafe character with a single underscore (no collapse)
-    sanitized = re.sub(r'[<>:"/\\|?*]', '_', filename)
+    sanitized = re.sub(r'[<>:"/\\|?*]', "_", filename)
     # Limit length
     if len(sanitized) > 255:
         sanitized = sanitized[:255]
     return sanitized
 
 
-def create_temp_file(suffix: str = ".jpg", directory: Optional[Path] = None) -> Path:
+def create_temp_file(suffix: str = ".png", directory: Optional[Path] = None) -> Path:
     """Create a temporary file path and return it, but do not create the file."""
     import tempfile
     import uuid
+
     if directory is None:
-        directory = Path("/tmp/isf_renderer")
+        directory = Path(tempfile.gettempdir()) / "isf_renderer"
     directory.mkdir(parents=True, exist_ok=True)
     # Generate a unique filename
     unique_name = f"tmp{uuid.uuid4().hex}{suffix}"
@@ -133,23 +130,3 @@ def decode_base64_to_image(base64_data: str, output_path: Path) -> None:
     image_data = base64.b64decode(base64_data)
     with open(output_path, "wb") as f:
         f.write(image_data)
-
-
-class ISFShaderError(Exception):
-    """Base exception for ISF shader errors."""
-    
-    def __init__(self, message: str, error_code: str, details: Optional[Dict[str, Any]] = None):
-        self.message = message
-        self.error_code = error_code
-        self.details = details or {}
-        super().__init__(message)
-
-
-class ShaderValidationError(ISFShaderError):
-    """Exception for shader validation errors."""
-    pass
-
-
-class RenderingError(ISFShaderError):
-    """Exception for rendering errors."""
-    pass 

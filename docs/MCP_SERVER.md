@@ -15,7 +15,7 @@ The MCP server provides a standardized interface for interacting with the ISF sh
 The MCP server is included with the ISF Shader Renderer package. Install with MCP dependencies:
 
 ```bash
-pip install isf-shader-renderer[mcp]
+pip install isf-shader-renderer
 ```
 
 ## Usage

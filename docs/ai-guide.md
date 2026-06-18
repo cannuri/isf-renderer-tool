@@ -4,14 +4,14 @@ This guide provides comprehensive information for AI systems to effectively use 
 
 ## Command Overview
 
-**Tool Name**: `isf-shader-render`
+**Tool Name**: `isf-renderer`
 **Purpose**: Render ISF (Interactive Shader Format) shaders to PNG images
 **AI-Friendly Flag**: `--ai-info` (provides natural language output without colors/formatting)
 
 ## Essential Command Structure
 
 ```bash
-isf-shader-render <shader_file> --output <output_path> [options]
+isf-renderer <shader_file> --output <output_path> [options]
 ```
 
 ## Core Parameters
@@ -32,7 +32,7 @@ isf-shader-render <shader_file> --output <output_path> [options]
 
 ### 1. Basic Shader Validation
 ```bash
-isf-shader-render shader.fs --output test.png --ai-info
+isf-renderer shader.fs --output test.png --ai-info
 ```
 **Purpose**: Test if a shader compiles and renders successfully
 **Expected Output**:
@@ -41,21 +41,21 @@ isf-shader-render shader.fs --output test.png --ai-info
 
 ### 2. Shader Compilation Testing
 ```bash
-isf-shader-render shader.fs --output test.png --ai-info --time 0
+isf-renderer shader.fs --output test.png --ai-info --time 0
 ```
 **Purpose**: Validate shader at specific time point
 **Use Case**: Testing shader compilation and basic functionality
 
 ### 3. Animation Frame Generation
 ```bash
-isf-shader-render shader.fs --output frame_%04d.png --ai-info --time 0 --time 1 --time 2
+isf-renderer shader.fs --output frame_%04d.png --ai-info --time 0 --time 1 --time 2
 ```
 **Purpose**: Generate multiple frames for animation
 **Output**: `frame_0000.png`, `frame_0001.png`, `frame_0002.png`
 
 ### 4. Input Parameter Testing
 ```bash
-isf-shader-render shader.fs --output test.png --ai-info --inputs "color=1.0 0.0 0.0 1.0,intensity=0.8"
+isf-renderer shader.fs --output test.png --ai-info --inputs "color=1.0 0.0 0.0 1.0,intensity=0.8"
 ```
 **Purpose**: Test shader with specific input parameters
 **Use Case**: Validating shader behavior with different inputs
@@ -127,7 +127,6 @@ defaults:
   width: 1920
   height: 1080
   quality: 95
-  max_texture_size: 4096
 
 shaders:
   - input: "shader1.fs"
@@ -139,7 +138,7 @@ shaders:
 
 ### Batch Rendering Command
 ```bash
-isf-shader-render --config config.yaml --ai-info
+isf-renderer --config config.yaml --ai-info
 ```
 
 ## Sample AI Prompts and Responses
@@ -148,7 +147,7 @@ isf-shader-render --config config.yaml --ai-info
 **User**: "Test if this shader compiles and renders correctly"
 **AI Action**:
 ```bash
-isf-shader-render user_shader.fs --output test.png --ai-info
+isf-renderer user_shader.fs --output test.png --ai-info
 ```
 **Response**: "Successfully rendered 1 frame" or specific error description
 
@@ -156,7 +155,7 @@ isf-shader-render user_shader.fs --output test.png --ai-info
 **User**: "Create 10 frames of animation from this shader"
 **AI Action**:
 ```bash
-isf-shader-render animation_shader.fs --output frame_%04d.png --ai-info --time 0 --time 0.1 --time 0.2 --time 0.3 --time 0.4 --time 0.5 --time 0.6 --time 0.7 --time 0.8 --time 0.9
+isf-renderer animation_shader.fs --output frame_%04d.png --ai-info --time 0 --time 0.1 --time 0.2 --time 0.3 --time 0.4 --time 0.5 --time 0.6 --time 0.7 --time 0.8 --time 0.9
 ```
 **Response**: "Successfully rendered 10 frames"
 
@@ -165,18 +164,18 @@ isf-shader-render animation_shader.fs --output frame_%04d.png --ai-info --time 0
 **AI Action**:
 ```bash
 # Red
-isf-shader-render color_shader.fs --output red.png --ai-info --inputs "color=1.0 0.0 0.0 1.0"
+isf-renderer color_shader.fs --output red.png --ai-info --inputs "color=1.0 0.0 0.0 1.0"
 # Green
-isf-shader-render color_shader.fs --output green.png --ai-info --inputs "color=0.0 1.0 0.0 1.0"
+isf-renderer color_shader.fs --output green.png --ai-info --inputs "color=0.0 1.0 0.0 1.0"
 # Blue
-isf-shader-render color_shader.fs --output blue.png --ai-info --inputs "color=0.0 0.0 1.0 1.0"
+isf-renderer color_shader.fs --output blue.png --ai-info --inputs "color=0.0 0.0 1.0 1.0"
 ```
 
 ### Prompt 4: Debug Shader Errors
 **User**: "Why isn't this shader working?"
 **AI Action**:
 ```bash
-isf-shader-render broken_shader.fs --output debug.png --ai-info
+isf-renderer broken_shader.fs --output debug.png --ai-info
 ```
 **Response**: Natural language error description with actionable advice
 
@@ -185,29 +184,29 @@ isf-shader-render broken_shader.fs --output debug.png --ai-info
 **AI Action**:
 ```bash
 # Create config.yaml with all shaders
-isf-shader-render --config batch_config.yaml --ai-info
+isf-renderer --config batch_config.yaml --ai-info
 ```
 
 ## Advanced Usage Patterns
 
 ### 1. Stdin Input (for dynamic shader generation)
 ```bash
-echo "void main() { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }" | isf-shader-render - --output dynamic.png --ai-info
+echo "void main() { gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0); }" | isf-renderer - --output dynamic.png --ai-info
 ```
 
 ### 2. High-Quality Rendering
 ```bash
-isf-shader-render shader.fs --output hq.png --ai-info --width 3840 --height 2160 --quality 100
+isf-renderer shader.fs --output hq.png --ai-info --width 3840 --height 2160 --quality 100
 ```
 
 ### 3. Small Test Renders
 ```bash
-isf-shader-render shader.fs --output test.png --ai-info --width 256 --height 256
+isf-renderer shader.fs --output test.png --ai-info --width 256 --height 256
 ```
 
 ### 4. Time-Based Animation Testing
 ```bash
-isf-shader-render animated_shader.fs --output anim_%04d.png --ai-info --time 0:2:0.1
+isf-renderer animated_shader.fs --output anim_%04d.png --ai-info --time 0:2:0.1
 ```
 
 ## Error Recovery Strategies
@@ -229,7 +228,7 @@ isf-shader-render animated_shader.fs --output anim_%04d.png --ai-info --time 0:2
 
 ### 4. Performance Issues
 - Reduce render dimensions if memory errors occur
-- Use smaller `max_texture_size` in configuration
+- Use smaller `width`/`height` in configuration
 - Test with lower quality settings first
 
 ## Best Practices for AI Usage
@@ -264,7 +263,7 @@ isf-shader-render animated_shader.fs --output anim_%04d.png --ai-info --time 0:2
 ### 1. CI/CD Pipeline Integration
 ```bash
 # Test shader compilation in pipeline
-isf-shader-render shader.fs --output test.png --ai-info
+isf-renderer shader.fs --output test.png --ai-info
 if [ $? -eq 0 ]; then
     echo "Shader compilation successful"
 else
@@ -277,7 +276,7 @@ fi
 ```bash
 # Test multiple shaders
 for shader in shaders/*.fs; do
-    isf-shader-render "$shader" --output "test_$(basename "$shader" .fs).png" --ai-info
+    isf-renderer "$shader" --output "test_$(basename "$shader" .fs).png" --ai-info
 done
 ```
 
@@ -285,7 +284,7 @@ done
 ```bash
 # Generate shader content dynamically
 shader_content="void main() { gl_FragColor = vec4($r, $g, $b, 1.0); }"
-echo "$shader_content" | isf-shader-render - --output dynamic.png --ai-info
+echo "$shader_content" | isf-renderer - --output dynamic.png --ai-info
 ```
 
 ## Troubleshooting Guide
@@ -294,13 +293,13 @@ echo "$shader_content" | isf-shader-render - --output dynamic.png --ai-info
 
 ```bash
 # Test with verbose output
-isf-shader-render shader.fs --output test.png --ai-info --verbose
+isf-renderer shader.fs --output test.png --ai-info --verbose
 
 # Test with profiling
-isf-shader-render shader.fs --output test.png --ai-info --profile
+isf-renderer shader.fs --output test.png --ai-info --profile
 
 # Test with minimal settings
-isf-shader-render shader.fs --output test.png --ai-info --width 64 --height 64
+isf-renderer shader.fs --output test.png --ai-info --width 64 --height 64
 ```
 
 ## Output Interpretation

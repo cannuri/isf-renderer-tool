@@ -2,22 +2,26 @@
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Dict, Any
+from typing import Any, Dict, List, Optional
 
 import yaml
 from jsonschema import validate
 
+
 @dataclass
 class Defaults:
     """Default configuration settings."""
+
     width: int = 1920
     height: int = 1080
     quality: int = 95
     output_format: str = "png"
 
+
 @dataclass
 class ShaderConfig:
     """Configuration for a single shader."""
+
     input: str
     output: str
     times: List[float]
@@ -35,11 +39,14 @@ class ShaderConfig:
     def get_quality(self, defaults: Defaults) -> int:
         return self.quality if self.quality is not None else defaults.quality
 
+
 @dataclass
 class ShaderRendererConfig:
     """Main configuration class for the ISF Shader Renderer."""
+
     defaults: Defaults = field(default_factory=Defaults)
     shaders: List[ShaderConfig] = field(default_factory=list)
+
 
 CONFIG_SCHEMA = {
     "type": "object",
@@ -79,11 +86,15 @@ CONFIG_SCHEMA = {
     "additionalProperties": False,
 }
 
+
 def load_config(config_path: Path) -> ShaderRendererConfig:
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
-    with open(config_path, 'r', encoding='utf-8') as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         data = yaml.safe_load(f)
+    # yaml.safe_load returns None for an empty file; treat that as an empty config.
+    if data is None:
+        data = {}
     try:
         validate(instance=data, schema=CONFIG_SCHEMA)
     except Exception as e:
@@ -111,6 +122,7 @@ def load_config(config_path: Path) -> ShaderRendererConfig:
             config.shaders.append(shader_config)
     return config
 
+
 def save_config(config: ShaderRendererConfig, config_path: Path) -> None:
     data = {
         "defaults": {
@@ -132,8 +144,9 @@ def save_config(config: ShaderRendererConfig, config_path: Path) -> None:
             for shader in config.shaders
         ],
     }
-    with open(config_path, 'w', encoding='utf-8') as f:
+    with open(config_path, "w", encoding="utf-8") as f:
         yaml.dump(data, f, default_flow_style=False, indent=2)
+
 
 def create_default_config(config_path: Path) -> None:
     config = ShaderRendererConfig()

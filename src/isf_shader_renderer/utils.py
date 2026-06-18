@@ -2,7 +2,7 @@
 
 import re
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import List
 
 
 def parse_time_range(time_range: str) -> List[float]:
@@ -21,11 +21,11 @@ def parse_time_range(time_range: str) -> List[float]:
         List of time codes
     """
     # Handle comma-separated values
-    if ',' in time_range:
-        return [float(t.strip()) for t in time_range.split(',')]
+    if "," in time_range:
+        return [float(t.strip()) for t in time_range.split(",")]
 
     # Handle range with step
-    range_pattern = r'^(\d+(?:\.\d+)?)\s*[-:]\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$'
+    range_pattern = r"^(\d+(?:\.\d+)?)\s*[-:]\s*(\d+(?:\.\d+)?)\s*:\s*(\d+(?:\.\d+)?)$"
     match = re.match(range_pattern, time_range)
     if match:
         start = float(match.group(1))
@@ -59,10 +59,10 @@ def format_output_path(template: str, frame_number: int, time_code: float) -> st
         Formatted path string
     """
     # Replace common format specifiers
-    formatted = template.replace('%d', str(frame_number))
-    formatted = formatted.replace('%04d', f'{frame_number:04d}')
-    formatted = formatted.replace('%f', f'{time_code:.3f}')
-    formatted = formatted.replace('%.3f', f'{time_code:.3f}')
+    formatted = template.replace("%d", str(frame_number))
+    formatted = formatted.replace("%04d", f"{frame_number:04d}")
+    formatted = formatted.replace("%f", f"{time_code:.3f}")
+    formatted = formatted.replace("%.3f", f"{time_code:.3f}")
 
     return formatted
 
@@ -107,7 +107,7 @@ def extract_shader_metadata(shader_content: str) -> dict:
     Returns:
         Dictionary containing extracted metadata
     """
-    metadata = {
+    metadata: dict = {
         "name": None,
         "description": None,
         "author": None,
@@ -124,26 +124,26 @@ def extract_shader_metadata(shader_content: str) -> dict:
         line = line.strip()
 
         # Extract name
-        if line.startswith('/*') and 'name:' in line.lower():
-            match = re.search(r'name:\s*([^*/]+)', line, re.IGNORECASE)
+        if line.startswith("/*") and "name:" in line.lower():
+            match = re.search(r"name:\s*([^*/]+)", line, re.IGNORECASE)
             if match:
                 metadata["name"] = match.group(1).strip()
 
         # Extract description
-        elif line.startswith('/*') and 'description:' in line.lower():
-            match = re.search(r'description:\s*([^*/]+)', line, re.IGNORECASE)
+        elif line.startswith("/*") and "description:" in line.lower():
+            match = re.search(r"description:\s*([^*/]+)", line, re.IGNORECASE)
             if match:
                 metadata["description"] = match.group(1).strip()
 
         # Extract author
-        elif line.startswith('/*') and 'author:' in line.lower():
-            match = re.search(r'author:\s*([^*/]+)', line, re.IGNORECASE)
+        elif line.startswith("/*") and "author:" in line.lower():
+            match = re.search(r"author:\s*([^*/]+)", line, re.IGNORECASE)
             if match:
                 metadata["author"] = match.group(1).strip()
 
         # Extract version
-        elif line.startswith('/*') and 'version:' in line.lower():
-            match = re.search(r'version:\s*([^*/]+)', line, re.IGNORECASE)
+        elif line.startswith("/*") and "version:" in line.lower():
+            match = re.search(r"version:\s*([^*/]+)", line, re.IGNORECASE)
             if match:
                 metadata["version"] = match.group(1).strip()
 
@@ -163,14 +163,14 @@ def sanitize_filename(filename: str) -> str:
     # Replace invalid characters
     invalid_chars = '<>:"/\\|?*'
     for char in invalid_chars:
-        filename = filename.replace(char, '_')
+        filename = filename.replace(char, "_")
 
     # Remove leading/trailing spaces and dots
-    filename = filename.strip(' .')
+    filename = filename.strip(" .")
 
     # Ensure it's not empty
     if not filename:
-        filename = 'unnamed'
+        filename = "unnamed"
 
     return filename
 
@@ -186,14 +186,14 @@ def get_file_extension(format_name: str) -> str:
         File extension with leading dot
     """
     format_map = {
-        'png': '.png',
-        'jpg': '.jpg',
-        'jpeg': '.jpg',
-        'bmp': '.bmp',
-        'tiff': '.tiff',
-        'tga': '.tga',
+        "png": ".png",
+        "jpg": ".jpg",
+        "jpeg": ".jpg",
+        "bmp": ".bmp",
+        "tiff": ".tiff",
+        "tga": ".tga",
     }
-    return format_map.get(format_name.lower(), '.png')
+    return format_map.get(format_name.lower(), ".png")
 
 
 def calculate_frame_count(start_time: float, end_time: float, fps: float) -> int:
@@ -239,12 +239,11 @@ def format_error_for_ai(error: Exception, context: str = "") -> str:
     Returns:
         Natural language error description
     """
-    error_type = type(error).__name__
     error_message = str(error)
 
     # Common error patterns and their AI-friendly descriptions
     if "main" in error_message.lower() and "function" in error_message.lower():
-        return f"The shader is missing a main function. ISF shaders require a 'void main()' function to define the fragment shader entry point."
+        return "The shader is missing a main function. ISF shaders require a 'void main()' function to define the fragment shader entry point."
 
     if "syntax" in error_message.lower():
         return f"The shader contains syntax errors: {error_message}. Please check the GLSL syntax and ensure all brackets, semicolons, and function calls are properly formatted."

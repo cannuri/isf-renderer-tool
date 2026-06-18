@@ -1,17 +1,12 @@
 /*{
     "DESCRIPTION": "A simple animated wave pattern",
     "CREDIT": "ISF Shader Renderer",
-<<<<<<< HEAD
     "CATEGORIES": ["Example", "Wave"],
-=======
-    "CATEGORIES": ["Test", "Wave"],
->>>>>>> 43e6b06c995869d9d0ab4c0203d0367da54c3d54
     "INPUTS": []
 }*/
 
-uniform float TIME;
-uniform vec2 RENDERSIZE;
-
+// Note: ISF automatically provides the TIME and RENDERSIZE uniforms;
+// shaders must not redeclare them or GLSL compilation fails.
 void main() {
     vec2 uv = gl_FragCoord.xy / RENDERSIZE.xy;
 
